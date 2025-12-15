@@ -1,7 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { getFirestore, doc, setDoc, updateDoc, onSnapshot, getDoc, collection } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+
 
 // 🔥 Replace with your Firebase config
 const firebaseConfig = {
@@ -13,135 +14,252 @@ const firebaseConfig = {
   appId: "1:1008823865996:web:1b754bc64b7c19d9ee21a9"
 };
 
-
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
+/* 🎯 LABELS */
 const labels = [
-  "The Holly & The Ivy","Something from the 12 Days of Christmas",
-  "Town or village’s main Christmas tree","House covered top to toe in decorations",
-  "Strava Art in the shape of something festive","Something you would eat on Christmas Day",
-  "A Christmas song or film","A Nativity Scene","Run on Christmas Eve or Day wearing something festive",
-  "Do the club ‘Baubles’ run/walk route","Visit Bethlehem","Real Life Donkey",
-  "The North Star","The Grinch","Penguins","Ice badge on Garmin",
-  "Snowflake","Take a selfie with a reindeer","A sleigh","Photo with a person in a Christmas jumper"
+  "The Holly & The Ivy","Something from the 12 Days of Christmas","Town or village’s main Christmas tree","House covered top to toe in decorations","Strava Art in the shape of something festive",
+  "Something you would eat on Christmas Day","A Christmas song or film","A Nativity Scene","Run on Christmas Eve or Day wearing something festive","Do the club ‘Baubles’ run/walk route",
+  "Visit Bethlehem","Real Life Donkey","The North Star","The Grinch","Penguins",
+  "Ice badge on Garmin","Snowflake","Take a selfie with a reindeer","A sleigh","Photo with a person in a Christmas jumper"
 ];
 
-const gridContainer = document.getElementById("grid");
-const allCardsContainer = document.getElementById("allCards");
+/* 👤 NAME HANDLING */
+let playerName = localStorage.getItem("festiveBingoName");
 
-signInAnonymously(auth);
+// Admin name
+const ADMIN_NAME = "hamandik";
 
-onAuthStateChanged(auth, async user => {
-  if (!user) return;
-  const userId = user.uid;
-  let name = localStorage.getItem("name");
-
-  if (!name) {
-    name = prompt("Enter your name:");
-    localStorage.setItem("name", name);
-    await setDoc(doc(db, "users", userId), { name });
-  } else {
-    await setDoc(doc(db, "users", userId), { name }, { merge: true });
-  }
-
-  renderOwnCard(userId);
-  renderAllCards();
-});
-
-async function renderOwnCard(userId) {
-  gridContainer.innerHTML = "";
-  for (let i = 0; i < labels.length; i++) {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    cell.dataset.index = i;
-
-    const storageRef = ref(storage, `users/${userId}/${i}.jpg`);
-    let url = null;
-    try { url = await getDownloadURL(storageRef); } catch {}
-
-    if (url) {
-      cell.innerHTML = `
-        <div class="cellContent">
-          <img src="${url}" />
-          <span class="cellLabel filled">${labels[i]}</span>
-        </div>`;
-    } else {
-      cell.innerHTML = `
-        <div class="cellContent">
-          <span class="cellLabel empty">${labels[i]}<br><small>Tap to upload</small></span>
-        </div>`;
-    }
-
-    cell.onclick = () => handleCellClick(userId, i, cell);
-    gridContainer.appendChild(cell);
+// Prompt logic
+if (playerName) {
+  if (playerName.toLowerCase() !== ADMIN_NAME) {
+    const continueName = confirm(`Continue as "${playerName}"? Press Cancel to switch user.`);
+    if (!continueName) playerName = null;
   }
 }
 
-async function handleCellClick(userId, index, cell) {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-  input.capture = "environment";
+if (!playerName) {
+  let input = "";
+  while (!input || !input.trim()) {
+    input = prompt("Enter your name (this is how you access your card):");
+    if (!input) { alert("Name is required."); }
+  }
+  playerName = input.trim();
+  localStorage.setItem("festiveBingoName", playerName);
+}
 
-  input.onchange = async e => {
-    const file = e.target.files[0];
-    if (!file) return;
+const isAdmin = playerName.toLowerCase() === ADMIN_NAME;
 
-    const storageRef = ref(storage, `users/${userId}/${index}.jpg`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
+const myGrid = document.getElementById("myGrid");
+const allPlayersDiv = document.getElementById("allPlayers");
 
-    cell.innerHTML = `
-      <div class="cellContent">
-        <img src="${url}" />
-        <span class="cellLabel filled">${labels[index]}</span>
-      </div>`;
+if (!isAdmin) {
+  document.getElementById("myTitle").textContent = `${playerName}'s Bingo Card`;
+  // Build player grid
+  labels.forEach((label,index)=>{
+    const cell=document.createElement("div");
+    cell.className="cell";
+    const labelDiv=document.createElement("div");
+    labelDiv.className="label";
+    labelDiv.innerHTML=`${label}<div class="upload-hint">Tap to upload</div>`;
+    cell.appendChild(labelDiv);
+    cell.onclick=()=>uploadPhoto(index);
+    myGrid.appendChild(cell);
+  });
+}
 
-    renderAllCards();
+/* 🗃️ Ensure card exists (only for player, not admin) */
+if (!isAdmin) setDoc(doc(db,"cards",playerName),{}, {merge:true});
+
+/* 📸 Upload / replace */
+async function uploadPhoto(index){
+  const input=document.createElement("input");
+  input.type="file";
+  input.accept="image/*";
+  input.onchange=async()=>{
+    if(!input.files[0]) return;
+
+    const file=input.files[0];
+
+    // Optional resizing
+    const resizedFile = await resizeImage(file, 800, 800);
+
+    const fileRef=ref(storage,`cards/${playerName}/${index}.jpg`);
+    await uploadBytes(fileRef,resizedFile);
+    const url=await getDownloadURL(fileRef);
+
+    await updateDoc(doc(db,"cards",playerName),{ [index]: url });
   };
-
   input.click();
 }
 
-async function renderAllCards() {
-  allCardsContainer.innerHTML = "";
-  const snapshot = await getDocs(collection(db, "users"));
-  for (const docSnap of snapshot.docs) {
-    const userCard = document.createElement("div");
-    userCard.className = "userCard";
-    userCard.innerHTML = `<h3>${docSnap.data().name}</h3>`;
+/* Resize image */
+function resizeImage(file,maxWidth,maxHeight){
+  return new Promise((resolve)=>{
+    const img=document.createElement("img");
+    const reader=new FileReader();
+    reader.onload=e=>{
+      img.src=e.target.result;
+      img.onload=()=>{
+        const canvas=document.createElement("canvas");
+        let {width,height}=img;
+        if(width>maxWidth){ height*=maxWidth/width; width=maxWidth; }
+        if(height>maxHeight){ width*=maxHeight/height; height=maxHeight; }
+        canvas.width=width; canvas.height=height;
+        const ctx=canvas.getContext("2d");
+        ctx.drawImage(img,0,0,width,height);
+        canvas.toBlob(blob=>resolve(new File([blob],file.name,{type:file.type})));
+      };
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
-    const grid = document.createElement("div");
-    grid.className = "grid";
-
-    for (let i = 0; i < labels.length; i++) {
-      const cell = document.createElement("div");
-      cell.className = "cell";
-
-      const storageRef = ref(storage, `users/${docSnap.id}/${i}.jpg`);
-      let url = null;
-      try { url = await getDownloadURL(storageRef); } catch {}
-
-      if (url) {
-        cell.innerHTML = `
-          <div class="cellContent">
-            <img src="${url}" />
-            <span class="cellLabel filled">${labels[i]}</span>
-          </div>`;
-      } else {
-        cell.innerHTML = `
-          <div class="cellContent">
-            <span class="cellLabel empty">${labels[i]}</span>
-          </div>`;
+/* 🔄 Live update my card */
+if(!isAdmin){
+  onSnapshot(doc(db,"cards",playerName),(snap)=>{
+    const data=snap.data()||{};
+    [...myGrid.children].forEach((cell,i)=>{
+      cell.innerHTML="";
+      if(data[i]){
+        cell.classList.add("filled");
+        const img=document.createElement("img");
+        img.src=data[i];
+        const lbl=document.createElement("div");
+        lbl.className="label";
+        lbl.textContent=labels[i];
+        cell.appendChild(img);
+        cell.appendChild(lbl);
+      }else{
+        cell.classList.remove("filled");
+        const lbl=document.createElement("div");
+        lbl.className="label";
+        lbl.innerHTML=`${labels[i]}<div class="upload-hint">Tap to upload</div>`;
+        cell.appendChild(lbl);
       }
+    });
 
+    // ✅ Bingo complete and row/column highlight
+    checkBingoCompletion(data);
+  });
+}
+
+/* 👥 All players view & admin controls */
+onSnapshot(collection(db,"cards"),(snapshot)=>{
+  allPlayersDiv.innerHTML="";
+  snapshot.forEach(docSnap=>{
+    const name=docSnap.id;
+    if(!isAdmin && name===playerName) return;
+
+    const wrapper=document.createElement("div");
+    wrapper.className="player-card";
+    wrapper.innerHTML=`<h3>${name}</h3>`;
+    const grid=document.createElement("div");
+    grid.className="grid";
+
+    labels.forEach((label,i)=>{
+      const cell=document.createElement("div");
+      cell.className="cell";
+      if(docSnap.data()[i]){
+        const img=document.createElement("img");
+        img.src=docSnap.data()[i];
+        const lbl=document.createElement("div");
+        lbl.className="label";
+        lbl.textContent=label;
+        cell.appendChild(img);
+        cell.appendChild(lbl);
+      }else{
+        cell.textContent=label;
+      }
       grid.appendChild(cell);
+    });
+
+    wrapper.appendChild(grid);
+
+    if(isAdmin){
+      const delBtn=document.createElement("button");
+      delBtn.className="admin-btn";
+      delBtn.textContent="Delete Card";
+      delBtn.onclick=async()=>{
+        if(confirm(`Delete ${name}'s card? This cannot be undone.`)){
+          const cardRef=doc(db,"cards",name);
+          const cardSnap=await getDoc(cardRef);
+          if(cardSnap.exists()){
+            const data=cardSnap.data();
+            for(const i in data){
+              const imgRef=ref(storage,`cards/${name}/${i}.jpg`);
+              await deleteObject(imgRef).catch(()=>{});
+            }
+            await cardRef.delete();
+          }
+        }
+      };
+      wrapper.appendChild(delBtn);
     }
 
-    userCard.appendChild(grid);
-    allCardsContainer.appendChild(userCard);
+    allPlayersDiv.appendChild(wrapper);
+  });
+});
+
+/* 🎉 Bingo complete + row/column highlight function */
+function checkBingoCompletion(data) {
+  const filledIndexes = Object.keys(data).map(n => parseInt(n));
+  const total = labels.length;
+
+  // Bingo complete
+  if(filledIndexes.length === total) {
+    if(!document.getElementById("bingoBanner")) {
+      const banner = document.createElement("div");
+      banner.id = "bingoBanner";
+      banner.style.textAlign = "center";
+      banner.style.padding = "10px";
+      banner.style.background = "#28a745";
+      banner.style.color = "#fff";
+      banner.style.fontSize = "20px";
+      banner.style.fontWeight = "bold";
+      banner.textContent = "🎉 BINGO COMPLETE! 🎉";
+      document.body.insertBefore(banner,myGrid);
+    }
+  } else {
+    const existingBanner = document.getElementById("bingoBanner");
+    if(existingBanner) existingBanner.remove();
+  }
+
+  // Highlight filled rows/columns
+  const rows = 4;
+  const cols = 5;
+  const gridChildren = [...myGrid.children];
+
+  // Clear previous highlights
+  gridChildren.forEach(cell => cell.style.boxShadow = "");
+
+  // Rows
+  for(let r=0; r<rows; r++){
+    let complete = true;
+    for(let c=0; c<cols; c++){
+      const idx = r*cols + c;
+      if(!data[idx]) complete = false;
+    }
+    if(complete){
+      for(let c=0; c<cols; c++){
+        gridChildren[r*cols+c].style.boxShadow="0 0 10px 3px gold";
+      }
+    }
+  }
+
+  // Columns
+  for(let c=0; c<cols; c++){
+    let complete = true;
+    for(let r=0; r<rows; r++){
+      const idx = r*cols + c;
+      if(!data[idx]) complete = false;
+    }
+    if(complete){
+      for(let r=0; r<rows; r++){
+        gridChildren[r*cols+c].style.boxShadow="0 0 10px 3px cyan";
+      }
+    }
   }
 }
