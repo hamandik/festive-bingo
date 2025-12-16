@@ -1,4 +1,4 @@
-console.log("Festive Bingo app.js loaded — v2025-12-16-1");
+console.log("Festive Bingo app.js loaded — v2025-12-16-2");
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -49,6 +49,17 @@ const labels = [
 const grid = document.getElementById("myGrid");
 const playersDiv = document.getElementById("players");
 const banner = document.getElementById("banner");
+
+const title = document.getElementById("myTitle");
+
+if (isAdmin) {
+  // Admin has no personal card
+  title.style.display = "none";
+  grid.style.display = "none";
+} else {
+  title.innerText = `${name}'s Bingo Card`;
+}
+
 
 if (!isAdmin) {
   labels.forEach((label,i)=>{
