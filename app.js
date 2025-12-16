@@ -1,3 +1,5 @@
+console.log("Festive Bingo app.js loaded — v2025-12-16-1");
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
@@ -19,13 +21,22 @@ const storage = getStorage(app);
 const ADMIN = "hamandik";
 let name = localStorage.getItem("bingoName");
 
+if (name) {
+  const keep = confirm(`Continue as "${name}"?\n\nPress Cancel to switch user or log in as admin.`);
+  if (!keep) {
+    localStorage.removeItem("bingoName");
+    name = null;
+  }
+}
+
 while (!name) {
-  const input = prompt("Enter your name:");
+  const input = prompt("Enter your name (players: your name, admin: hamandik):");
   if (input && input.trim()) {
     name = input.trim();
     localStorage.setItem("bingoName", name);
   }
 }
+
 
 const isAdmin = name.toLowerCase() === ADMIN;
 const labels = [
