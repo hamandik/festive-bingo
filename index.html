@@ -1,143 +1,36 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Festive Bingo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { font-family: Arial, sans-serif; background: #f5f5f5; margin:0; padding:20px; }
-    h1,h2 { text-align:center; }
-    .grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; max-width:900px; margin:20px auto; }
-    .cell { position:relative; aspect-ratio:1/1; background:#e5e5e5; border-radius:8px; cursor:pointer; overflow:hidden; display:flex; align-items:center; justify-content:center; text-align:center; padding:8px; font-size:14px; font-weight:bold; color:#000; }
-    .cell img { width:100%; height:100%; object-fit:cover; }
-    .cell.filled .label { position:absolute; bottom:4px; left:4px; right:4px; color:#fff; text-shadow:0 0 6px #000; font-size:12px; }
-    .label { pointer-events:none; }
-    .upload-hint { font-size:12px; font-weight:normal; margin-top:4px; }
-    .player-card { margin-bottom:40px; }
-    .admin-btn { background:red; color:white; border:none; padding:4px 6px; margin-top:4px; cursor:pointer; border-radius:4px; font-size:12px; }
-  </style>
-</head>
-<body>
-  <h1>🎄 Festive Bingo 🎄</h1>
-
-  <h2 id="myTitle"></h2>
-  <div id="myGrid" class="grid"></div>
-
-  <h2>All Players</h2>
-  <div id="allPlayers"></div>
-
-  <script type="module" src="app.js"></script>
-</body>
-</html>
-=======
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Festive Bingo</title>
-
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #fff7f0;
-      color: #333;
-      margin: 0;
-      padding: 20px;
-    }
-
-    h1, h2 { text-align: center; color: #c0392b; }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 10px;
-      margin: 20px auto;
-      max-width: 900px;
-    }
-
-    .cell {
-      background: #fff;
-      border: 2px solid #c0392b;
-      border-radius: 8px;
-      min-height: 120px;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.1s, box-shadow 0.2s;
-    }
-
-    .cell:hover {
-      transform: scale(1.03);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    }
-
-    .cellContent img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .cellContent .cellLabel {
-      position: absolute;
-      bottom: 5px;
-      left: 5px;
-      right: 5px;
-      font-weight: bold;
-      font-size: 12px;
-      text-align: center;
-    }
-
-    .cellLabel.filled {
-      color: white;
-      text-shadow: 1px 1px 2px black;
-    }
-
-    .cellLabel.empty {
-      color: black;
-      text-shadow: none;
-      font-size: 11px;
-    }
-
-    .userCard {
-      background: #fdebd0;
-      border: 2px solid #c0392b;
-      border-radius: 8px;
-      padding: 10px;
-      margin: 15px auto;
-      max-width: 950px;
-    }
-
-    .userCard h3 {
-      margin-top: 0;
-      text-align: center;
-      color: #922b21;
-    }
-
-    @media (max-width: 600px) {
-      .grid { grid-template-columns: repeat(2, 1fr); }
-      .cell { min-height: 100px; font-size: 11px; }
-      .cellContent .cellLabel { font-size: 10px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Festive Bingo</title>
+<style>
+body { font-family: Arial, sans-serif; background:#f2f2f2; margin:0; }
+h1 { text-align:center; color:#c62828; margin:10px; }
+#myTitle { text-align:center; font-weight:bold; margin-bottom:10px; }
+#myGrid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; max-width:900px; margin:auto; }
+.cell { background:white; border:1px solid #ccc; height:110px; position:relative; cursor:pointer; overflow:hidden; }
+.cell img { width:100%; height:100%; object-fit:cover; position:absolute; }
+.label { position:absolute; bottom:4px; left:4px; right:4px; font-size:11px; z-index:2; }
+.empty .label { color:black; }
+.filled .label { color:white; text-shadow:1px 1px 4px black; }
+.upload { font-size:10px; display:block; }
+#banner { display:none; background:#2e7d32; color:white; text-align:center; padding:8px; margin:10px auto; max-width:900px; font-weight:bold; }
+.player { background:white; margin:10px auto; padding:6px; max-width:900px; border:1px solid #bbb; }
+.player h3 { margin:4px 0; }
+.adminBtn { background:#c62828; color:white; border:none; padding:4px 6px; cursor:pointer; }
+</style>
 </head>
 <body>
 
-  <h1>🎄 Festive Bingo 🎄</h1>
+<h1>🎄 Festive Bingo 🎄</h1>
+<div id="banner">🎉 BINGO COMPLETE! 🎉</div>
+<div id="myTitle">My Bingo Card</div>
+<div id="myGrid"></div>
 
-  <h2>My Bingo Card</h2>
-  <div id="grid" class="grid"></div>
+<h2 style="text-align:center;">All Players</h2>
+<div id="players"></div>
 
-  <h2>All Players</h2>
-  <div id="allCards"></div>
-
-  <script type="module" src="app.js"></script>
-
+<script type="module" src="app.js"></script>
 </body>
 </html>
->>>>>>> 8bab92a5e18fb57b4ff0c1d1384b84e0b2f27dbf
