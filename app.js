@@ -110,6 +110,7 @@ onSnapshot(collection(db,"cards"),snap=>{
   playersDiv.innerHTML="";
 
   snap.forEach(d=>{
+    console.log("CARD DOC:", d.id, d.data());    
     if(!isAdmin && d.id===name) return;
 
     const wrapper = document.createElement("div");
