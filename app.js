@@ -108,13 +108,20 @@ if(!isAdmin){
 
 onSnapshot(collection(db,"cards"),snap=>{
   playersDiv.innerHTML="";
+
   snap.forEach(d=>{
     if(!isAdmin && d.id===name) return;
-    const box=document.createElement("div");
-    box.className="player";
-    box.innerHTML=`<h3>${d.id}</h3>`;
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "player";
+
+    const title = document.createElement("h3");
+    title.textContent = d.id;
+    wrapper.appendChild(title);
+
+    // Admin delete button
     if(isAdmin){
-      const btn=document.createElement("button");
+      const btn = document.createElement("button");
       btn.className="adminBtn";
       btn.textContent="Delete Card";
       btn.onclick=async()=>{
@@ -126,8 +133,37 @@ onSnapshot(collection(db,"cards"),snap=>{
           await deleteDoc(doc(db,"cards",d.id));
         }
       };
-      box.appendChild(btn);
+      wrapper.appendChild(btn);
     }
-    playersDiv.appendChild(box);
+
+    // Create read-only grid
+    const gridView = document.createElement("div");
+    gridView.style.display="grid";
+    gridView.style.gridTemplateColumns="repeat(5,1fr)";
+    gridView.style.gap="6px";
+    gridView.style.marginTop="6px";
+
+    const data = d.data();
+
+    labels.forEach((label,i)=>{
+      const cell = document.createElement("div");
+      cell.className="cell";
+
+      if(data[i]){
+        cell.classList.add("filled");
+        cell.innerHTML = `
+          <img src="${data[i]}">
+          <div class="label">${label}</div>
+        `;
+      } else {
+        cell.classList.add("empty");
+        cell.innerHTML = `<div class="label">${label}</div>`;
+      }
+
+      gridView.appendChild(cell);
+    });
+
+    wrapper.appendChild(gridView);
+    playersDiv.appendChild(wrapper);
   });
 });
