@@ -5,32 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Festive Bingo</title>
 <style>
-body { font-family: Arial, sans-serif; background:#f2f2f2; margin:0; }
-h1 { text-align:center; color:#c62828; margin:10px; }
-#myTitle { text-align:center; font-weight:bold; margin-bottom:10px; }
-#myGrid { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; max-width:900px; margin:auto; }
-.cell { background:white; border:1px solid #ccc; height:110px; position:relative; cursor:pointer; overflow:hidden; }
-.cell img { width:100%; height:100%; object-fit:cover; position:absolute; }
-.label { position:absolute; bottom:4px; left:4px; right:4px; font-size:11px; z-index:2; }
-.empty .label { color:black; }
-.filled .label { color:white; text-shadow:1px 1px 4px black; }
-.upload { font-size:10px; display:block; }
-#banner { display:none; background:#2e7d32; color:white; text-align:center; padding:8px; margin:10px auto; max-width:900px; font-weight:bold; }
-.player { background:white; margin:10px auto; padding:6px; max-width:900px; border:1px solid #bbb; }
-.player h3 { margin:4px 0; }
-.adminBtn { background:#c62828; color:white; border:none; padding:4px 6px; cursor:pointer; }
+body { font-family: Arial, sans-serif; margin:0; padding:0; background:#f0f0f0; }
+h1 { text-align:center; color:#d32f2f; margin-top:10px; }
+#myTitle { text-align:center; margin:10px 0; font-size:1.2em; }
+#myGrid { display:grid; grid-template-columns: repeat(5, 1fr); grid-gap:5px; width:90%; max-width:900px; margin:0 auto; }
+.cell { position:relative; background:#fff; border:1px solid #ccc; height:100px; display:flex; justify-content:center; align-items:center; cursor:pointer; text-align:center; overflow:hidden; }
+.cell img { width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:1; }
+.cell .label { position:absolute; z-index:2; color:black; font-weight:bold; text-shadow:none; }
+.cell.filled .label { color:white; text-shadow:1px 1px 3px black; }
+.upload-hint { font-size:0.7em; color:black; display:block; }
+#allPlayers { margin:20px auto; width:90%; max-width:900px; }
+.player-card { border:1px solid #999; background:#fff; margin-bottom:10px; padding:5px; }
+.player-card h3 { margin:0 0 5px 0; font-size:1em; }
+.admin-btn { margin-top:5px; padding:3px 5px; font-size:0.8em; background:#d32f2f; color:white; border:none; cursor:pointer; }
+#bingoBanner { text-align:center; padding:10px; background:#28a745; color:white; font-weight:bold; margin:10px auto; width:90%; max-width:900px; }
 </style>
 </head>
 <body>
 
 <h1>🎄 Festive Bingo 🎄</h1>
-<div id="banner">🎉 BINGO COMPLETE! 🎉</div>
 <div id="myTitle">My Bingo Card</div>
+<div style="text-align:center; margin-bottom:10px;">
+  <button id="downloadBtn" style="padding:8px 12px; font-size:14px; cursor:pointer;">
+    📥 Download my card
+  </button>
+</div>
 <div id="myGrid"></div>
 
 <h2 style="text-align:center;">All Players</h2>
-<div id="players"></div>
+<div id="allPlayers"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script type="module" src="app.js"></script>
 
 <script type="module" src="app.js"></script>
+
 </body>
 </html>
