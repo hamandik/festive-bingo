@@ -87,14 +87,19 @@ async function upload(i){
   input.click();
 }
 
-if(!isAdmin){
-  onSnapshot(doc(db,"cards",name),snap=>{
-    const data=snap.data()||{};
-    let filled=0;
-    [...grid.children].forEach((c,i)=>{
+let bingoAlreadyCelebrated = false;
+
+if (!isAdmin) {
+  onSnapshot(doc(db,"cards",name), snap => {
+    const data = snap.data() || {};
+    const cells = [...grid.children];
+
+    // render cells
+    cells.forEach((c,i)=>{
       c.innerHTML="";
+      c.style.outline = "none";
+
       if(data[i]){
-        filled++;
         c.className="cell filled";
         c.innerHTML=`<img src="${data[i]}"><div class="label">${labels[i]}</div>`;
       } else {
@@ -102,9 +107,53 @@ if(!isAdmin){
         c.innerHTML=`<div class="label">${labels[i]}<span class="upload">Tap to upload</span></div>`;
       }
     });
-    banner.style.display = filled===20 ? "block":"none";
+
+    // check rows & columns
+    const rows = 4;
+    const cols = 5;
+    let bingoHit = false;
+
+    // rows
+    for(let r=0;r<rows;r++){
+      let complete = true;
+      for(let c=0;c<cols;c++){
+        if(!data[r*cols+c]) complete=false;
+      }
+      if(complete){
+        bingoHit = true;
+        for(let c=0;c<cols;c++){
+          cells[r*cols+c].style.outline = "4px solid gold";
+        }
+      }
+    }
+
+    // columns
+    for(let c=0;c<cols;c++){
+      let complete = true;
+      for(let r=0;r<rows;r++){
+        if(!data[r*cols+c]) complete=false;
+      }
+      if(complete){
+        bingoHit = true;
+        for(let r=0;r<rows;r++){
+          cells[r*cols+c].style.outline = "4px solid cyan";
+        }
+      }
+    }
+
+    // celebration (only once)
+    if(bingoHit && !bingoAlreadyCelebrated){
+      bingoAlreadyCelebrated = true;
+
+      confetti({
+        particleCount: 200,
+        spread: 90,
+        origin: { y: 0.6 }
+      });
+    }
   });
 }
+
 
 onSnapshot(collection(db,"cards"),snap=>{
   playersDiv.innerHTML="";
