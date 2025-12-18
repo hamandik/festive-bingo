@@ -22,7 +22,7 @@ const ADMIN = "k99h";
 let name = localStorage.getItem("bingoName");
 
 if (name) {
-  const keep = confirm(`Continue as "${name}"?\n\nPress Cancel to switch user or log in as admin.`);
+  const keep = confirm(`Continue as "${name}"`);
   if (!keep) {
     localStorage.removeItem("bingoName");
     name = null;
