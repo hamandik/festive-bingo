@@ -18,7 +18,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-const ADMIN = "hamandik";
+const ADMIN = "k99h";
 let name = localStorage.getItem("bingoName");
 
 if (name) {
@@ -30,7 +30,7 @@ if (name) {
 }
 
 while (!name) {
-  const input = prompt("Enter your name (players: your name, admin: hamandik):");
+  const input = prompt("Enter your name (players: your name):");
   if (input && input.trim()) {
     name = input.trim();
     localStorage.setItem("bingoName", name);
@@ -38,7 +38,7 @@ while (!name) {
 }
 
 
-const isAdmin = name.toLowerCase() === ADMIN;
+
 const labels = [
   "The Holly & The Ivy","12 Days of Christmas","Town Christmas Tree","Decorated House","Festive Strava Art",
   "Christmas Food","Christmas Song/Film","Nativity Scene","Festive Run","Baubles Route",
@@ -49,6 +49,24 @@ const labels = [
 const grid = document.getElementById("myGrid");
 const playersDiv = document.getElementById("players");
 const banner = document.getElementById("banner");
+
+const ADMIN_PASSWORD = "k99h";
+
+let isAdmin = localStorage.getItem("isAdmin") === "true";
+
+document.addEventListener("keydown", (e) => {
+  // Ctrl + Alt + A = admin login
+  if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "a") {
+    const pw = prompt("Admin password:");
+    if (pw === ADMIN_PASSWORD) {
+      localStorage.setItem("isAdmin", "true");
+      alert("Admin mode enabled on this device.");
+      location.reload();
+    } else {
+      alert("Incorrect password.");
+    }
+  }
+});
 
 
 const downloadBtn = document.getElementById("downloadBtn");
