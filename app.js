@@ -43,12 +43,39 @@ const labels = [
   "The Holly & The Ivy","12 Days of Christmas","Town Christmas Tree","Decorated House","Festive Strava Art",
   "Christmas Food","Christmas Song/Film","Nativity Scene","Festive Run","Baubles Route",
   "Visit Bethlehem","Real Donkey","North Star","The Grinch","Penguins",
-  "Ice Badge","Snowflake","Reindeer Selfie","Sleigh","Christmas Jumper"
+  "Angel","Snowflake","Reindeer Selfie","Sleigh","Christmas Jumper"
 ];
 
 const grid = document.getElementById("myGrid");
 const playersDiv = document.getElementById("players");
 const banner = document.getElementById("banner");
+
+
+const downloadBtn = document.getElementById("downloadBtn");
+
+if (isAdmin) {
+  // Admin should not download a personal card
+  if (downloadBtn) downloadBtn.style.display = "none";
+} else {
+  downloadBtn.onclick = async () => {
+    // temporarily hide upload hints
+    document.querySelectorAll(".upload").forEach(el => el.style.display = "none");
+
+    const canvas = await html2canvas(grid, {
+      useCORS: true,
+      backgroundColor: "#ffffff"
+    });
+
+    // restore upload hints
+    document.querySelectorAll(".upload").forEach(el => el.style.display = "");
+
+    const link = document.createElement("a");
+    link.download = `${name}-festive-bingo.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+}
+
 
 const title = document.getElementById("myTitle");
 
