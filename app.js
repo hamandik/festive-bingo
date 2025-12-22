@@ -76,13 +76,35 @@ if (isAdmin) {
   if (downloadBtn) downloadBtn.style.display = "none";
 } else {
   downloadBtn.onclick = async () => {
-    // temporarily hide upload hints
-    document.querySelectorAll(".upload").forEach(el => el.style.display = "none");
+  // hide upload hints
+  document.querySelectorAll(".upload").forEach(el => el.style.display = "none");
 
-    const canvas = await html2canvas(grid, {
-      useCORS: true,
-      backgroundColor: "#ffffff"
-    });
+  // WAIT for all images in the grid to load
+  const imgs = grid.querySelectorAll("img");
+  await Promise.all(
+    [...imgs].map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(res => {
+        img.onload = img.onerror = res;
+      });
+    })
+  );
+
+  const canvas = await html2canvas(grid, {
+    useCORS: true,
+    backgroundColor: "#ffffff",
+    scale: 2   // higher quality
+  });
+
+  // restore upload hints
+  document.querySelectorAll(".upload").forEach(el => el.style.display = "");
+
+  const link = document.createElement("a");
+  link.download = `${name}-festive-bingo.png`;
+  link.href = canvas.toDataURL("image/png");
+  link.click();
+};
+
 
     // restore upload hints
     document.querySelectorAll(".upload").forEach(el => el.style.display = "");
@@ -146,7 +168,7 @@ if (!isAdmin) {
 
       if(data[i]){
         c.className="cell filled";
-        c.innerHTML=`<img src="${data[i]}"><div class="label">${labels[i]}</div>`;
+        c.innerHTML=`<img src="${data[i]}" crossorigin="anonymous"><div class="label">${labels[i]}</div>`;
       } else {
         c.className="cell empty";
         c.innerHTML=`<div class="label">${labels[i]}<span class="upload">Tap to upload</span></div>`;
@@ -247,7 +269,7 @@ onSnapshot(collection(db,"cards"),snap=>{
       if(data[i]){
         cell.classList.add("filled");
         cell.innerHTML = `
-          <img src="${data[i]}">
+          <img src="${data[i]}" crossorigin="anonymous">
           <div class="label">${label}</div>
         `;
       } else {
