@@ -1,10 +1,27 @@
-console.log("Festive Bingo app.js loaded — v2025-12-16-2");
+console.log("Festive Bingo app.js loaded — v2025-12-22");
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  updateDoc,
+  onSnapshot,
+  collection,
+  deleteDoc,
+  getDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// 🔥 REPLACE WITH YOUR REAL FIREBASE CONFIG (same project as before)
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+/** 🔥 Your Firebase config (OK to be public) */
 const firebaseConfig = {
   apiKey: "AIzaSyBelqwWBNr1w5ZHs9YUOvZ4eH1INdqpmiY",
   authDomain: "festive-bingo.firebaseapp.com",
@@ -18,44 +35,12 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const storage = getStorage(app);
 
-const ADMIN = "k99h";
-let name = localStorage.getItem("bingoName");
-
-if (name) {
-  const keep = confirm(`Continue as "${name}"`);
-  if (!keep) {
-    localStorage.removeItem("bingoName");
-    name = null;
-  }
-}
-
-while (!name) {
-  const input = prompt("Enter your name (players: your name):");
-  if (input && input.trim()) {
-    name = input.trim();
-    localStorage.setItem("bingoName", name);
-  }
-}
-
-
-
-const labels = [
-  "The Holly & The Ivy","12 Days of Christmas","Town Christmas Tree","Decorated House","Festive Strava Art",
-  "Christmas Food","Christmas Song/Film","Nativity Scene","Festive Run","Baubles Route",
-  "Visit Bethlehem","Real Donkey","North Star","The Grinch","Penguins",
-  "Angel","Snowflake","Reindeer Selfie","Sleigh","Christmas Jumper"
-];
-
-const grid = document.getElementById("myGrid");
-const playersDiv = document.getElementById("players");
-const banner = document.getElementById("banner");
-
-const ADMIN_PASSWORD = "k99h";
-
+/** ===== Admin (device-only) ===== */
+const ADMIN_PASSWORD = "k99h"; // change if you want
 let isAdmin = localStorage.getItem("isAdmin") === "true";
 
 document.addEventListener("keydown", (e) => {
-  // Ctrl + Alt + A = admin login
+  // Ctrl + Alt + A
   if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "a") {
     const pw = prompt("Admin password:");
     if (pw === ADMIN_PASSWORD) {
@@ -68,46 +53,76 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+/** ===== Name prompt ===== */
+let name = localStorage.getItem("bingoName");
 
+if (name) {
+  const keep = confirm(`Continue as "${name}"?`);
+  if (!keep) {
+    localStorage.removeItem("bingoName");
+    name = null;
+  }
+}
+
+while (!name && !isAdmin) {
+  const input = prompt("Enter your name:");
+  if (input && input.trim()) {
+    name = input.trim();
+    localStorage.setItem("bingoName", name);
+  }
+}
+
+/** ===== Labels ===== */
+const labels = [
+  "The Holly & The Ivy","12 Days of Christmas","Town Christmas Tree","Decorated House","Festive Strava Art",
+  "Christmas Food","Christmas Song/Film","Nativity Scene","Festive Run","Baubles Route",
+  "Visit Bethlehem","Real Donkey","North Star","The Grinch","Penguins",
+  "Angel","Snowflake","Reindeer Selfie","Sleigh","Christmas Jumper"
+];
+
+/** ===== DOM ===== */
+const grid = document.getElementById("myGrid");
+const playersDiv = document.getElementById("players");
+const banner = document.getElementById("banner");
+const titleEl = document.getElementById("myTitle");
 const downloadBtn = document.getElementById("downloadBtn");
+const firstBingoBanner = document.getElementById("firstBingoBanner");
 
-if (isAdmin) {
-  // Admin should not download a personal card
-  if (downloadBtn) downloadBtn.style.display = "none";
-} else {
-  downloadBtn.onclick = async () => {
-  // hide upload hints
-  document.querySelectorAll(".upload").forEach(el => el.style.display = "none");
-
-  // WAIT for all images in the grid to load
-  const imgs = grid.querySelectorAll("img");
-  await Promise.all(
-    [...imgs].map(img => {
-      if (img.complete) return Promise.resolve();
-      return new Promise(res => {
-        img.onload = img.onerror = res;
-      });
-    })
-  );
-
-  const canvas = await html2canvas(grid, {
-    useCORS: true,
-    backgroundColor: "#ffffff",
-    scale: 2   // higher quality
+/** ===== First-to-BINGO banner (visible to all) ===== */
+if (firstBingoBanner) {
+  onSnapshot(doc(db, "meta", "firstBingo"), (snap) => {
+    if (snap.exists()) {
+      firstBingoBanner.style.display = "block";
+      firstBingoBanner.textContent = `🏆 First to BINGO: ${snap.data().name}`;
+    }
   });
+}
 
-  // restore upload hints
-  document.querySelectorAll(".upload").forEach(el => el.style.display = "");
+/** ===== Download (quality + ensure photos included) ===== */
+if (isAdmin) {
+  if (downloadBtn) downloadBtn.style.display = "none";
+} else if (downloadBtn) {
+  downloadBtn.onclick = async () => {
+    // hide upload hints
+    document.querySelectorAll(".upload").forEach(el => (el.style.display = "none"));
 
-  const link = document.createElement("a");
-  link.download = `${name}-festive-bingo.png`;
-  link.href = canvas.toDataURL("image/png");
-  link.click();
-};
+    // wait for all images in the grid to load
+    const imgs = grid.querySelectorAll("img");
+    await Promise.all(
+      [...imgs].map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(res => { img.onload = img.onerror = res; });
+      })
+    );
 
+    const canvas = await html2canvas(grid, {
+      useCORS: true,
+      backgroundColor: "#ffffff",
+      scale: 2
+    });
 
     // restore upload hints
-    document.querySelectorAll(".upload").forEach(el => el.style.display = "");
+    document.querySelectorAll(".upload").forEach(el => (el.style.display = ""));
 
     const link = document.createElement("a");
     link.download = `${name}-festive-bingo.png`;
@@ -116,167 +131,192 @@ if (isAdmin) {
   };
 }
 
-
-const title = document.getElementById("myTitle");
-
+/** ===== Title + hide personal card for admin ===== */
 if (isAdmin) {
-  // Admin has no personal card
-  title.style.display = "none";
-  grid.style.display = "none";
+  if (titleEl) titleEl.style.display = "none";
+  if (grid) grid.style.display = "none";
 } else {
-  title.innerText = `${name}'s Bingo Card`;
+  if (titleEl) titleEl.innerText = `${name}'s Bingo Card`;
 }
 
+/** ===== Build my personal grid (players only) ===== */
+async function upload(i) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*"; // allows camera or gallery on most phones
+  input.onchange = async () => {
+    const file = input.files?.[0];
+    if (!file) return;
 
-if (!isAdmin) {
-  labels.forEach((label,i)=>{
-    const cell=document.createElement("div");
-    cell.className="cell empty";
-    cell.innerHTML=`<div class="label">${label}<span class="upload">Tap to upload</span></div>`;
-    cell.onclick=()=>upload(i);
-    grid.appendChild(cell);
-  });
-  setDoc(doc(db,"cards",name),{}, {merge:true});
-}
-
-async function upload(i){
-  const input=document.createElement("input");
-  input.type="file";
-  input.accept="image/*";
-  input.onchange=async()=>{
-    const file=input.files[0];
-    if(!file) return;
-    const r=ref(storage,`cards/${name}/${i}.jpg`);
-    await uploadBytes(r,file);
-    const url=await getDownloadURL(r);
-    await updateDoc(doc(db,"cards",name),{[i]:url});
+    const r = ref(storage, `cards/${name}/${i}.jpg`);
+    await uploadBytes(r, file);
+    const url = await getDownloadURL(r);
+    await updateDoc(doc(db, "cards", name), { [i]: url });
   };
   input.click();
 }
 
-let bingoAlreadyCelebrated = false;
+let smallBingoCelebrated = false;
+let fullBingoCelebrated = false;
 
 if (!isAdmin) {
-  onSnapshot(doc(db,"cards",name), snap => {
+  // Create 20 empty cells once
+  grid.innerHTML = "";
+  labels.forEach((label, i) => {
+    const cell = document.createElement("div");
+    cell.className = "cell empty";
+    cell.innerHTML = `<div class="label">${label}<span class="upload">Tap to upload</span></div>`;
+    cell.onclick = () => upload(i);
+    grid.appendChild(cell);
+  });
+
+  // Ensure my card doc exists
+  await setDoc(doc(db, "cards", name), {}, { merge: true });
+
+  // Live render my card
+  onSnapshot(doc(db, "cards", name), async (snap) => {
     const data = snap.data() || {};
     const cells = [...grid.children];
 
     // render cells
-    cells.forEach((c,i)=>{
-      c.innerHTML="";
+    cells.forEach((c, i) => {
+      c.innerHTML = "";
       c.style.outline = "none";
 
-      if(data[i]){
-        c.className="cell filled";
-        c.innerHTML=`<img src="${data[i]}" crossorigin="anonymous"><div class="label">${labels[i]}</div>`;
+      if (data[i]) {
+        c.className = "cell filled";
+        c.innerHTML = `<img src="${data[i]}" crossorigin="anonymous"><div class="label">${labels[i]}</div>`;
       } else {
-        c.className="cell empty";
-        c.innerHTML=`<div class="label">${labels[i]}<span class="upload">Tap to upload</span></div>`;
+        c.className = "cell empty";
+        c.innerHTML = `<div class="label">${labels[i]}<span class="upload">Tap to upload</span></div>`;
       }
     });
 
-    // check rows & columns
+    // check rows & columns (4x5)
     const rows = 4;
     const cols = 5;
     let bingoHit = false;
 
     // rows
-    for(let r=0;r<rows;r++){
+    for (let r = 0; r < rows; r++) {
       let complete = true;
-      for(let c=0;c<cols;c++){
-        if(!data[r*cols+c]) complete=false;
+      for (let c = 0; c < cols; c++) {
+        if (!data[r * cols + c]) complete = false;
       }
-      if(complete){
+      if (complete) {
         bingoHit = true;
-        for(let c=0;c<cols;c++){
-          cells[r*cols+c].style.outline = "4px solid gold";
+        for (let c = 0; c < cols; c++) {
+          cells[r * cols + c].style.outline = "4px solid gold";
         }
       }
     }
 
     // columns
-    for(let c=0;c<cols;c++){
+    for (let c = 0; c < cols; c++) {
       let complete = true;
-      for(let r=0;r<rows;r++){
-        if(!data[r*cols+c]) complete=false;
+      for (let r = 0; r < rows; r++) {
+        if (!data[r * cols + c]) complete = false;
       }
-      if(complete){
+      if (complete) {
         bingoHit = true;
-        for(let r=0;r<rows;r++){
-          cells[r*cols+c].style.outline = "4px solid cyan";
+        for (let r = 0; r < rows; r++) {
+          cells[r * cols + c].style.outline = "4px solid cyan";
         }
       }
     }
 
-    // celebration (only once)
-    if(bingoHit && !bingoAlreadyCelebrated){
-      bingoAlreadyCelebrated = true;
+    // SMALL celebration (rows/cols)
+    if (bingoHit && !smallBingoCelebrated) {
+      smallBingoCelebrated = true;
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    }
+    if (!bingoHit) smallBingoCelebrated = false;
 
-      confetti({
-        particleCount: 200,
-        spread: 90,
-        origin: { y: 0.6 }
-      });
+    // BIG celebration (full card)
+    const filledCount = Object.keys(data).length;
+
+    if (filledCount < 20) {
+      fullBingoCelebrated = false;
+    }
+
+    if (filledCount === 20 && !fullBingoCelebrated) {
+      fullBingoCelebrated = true;
+
+      const overlay = document.getElementById("bingoOverlay");
+      if (overlay) overlay.style.display = "flex";
+
+      const end = Date.now() + 2500;
+      (function fireworks() {
+        confetti({ particleCount: 6, angle: 60, spread: 55, origin: { x: 0 } });
+        confetti({ particleCount: 6, angle: 120, spread: 55, origin: { x: 1 } });
+        if (Date.now() < end) requestAnimationFrame(fireworks);
+      })();
+
+      setTimeout(() => {
+        if (overlay) overlay.style.display = "none";
+      }, 3000);
+
+      // Claim FIRST TO BINGO (only once globally)
+      const firstBingoRef = doc(db, "meta", "firstBingo");
+      const existing = await getDoc(firstBingoRef);
+      if (!existing.exists()) {
+        await setDoc(firstBingoRef, { name, time: serverTimestamp() });
+      }
     }
   });
 }
 
+/** ===== All players list (visible to everyone) ===== */
+onSnapshot(collection(db, "cards"), (snap) => {
+  playersDiv.innerHTML = "";
 
-onSnapshot(collection(db,"cards"),snap=>{
-  playersDiv.innerHTML="";
-
-  snap.forEach(d=>{
-    console.log("CARD DOC:", d.id, d.data());    
-    if(!isAdmin && d.id===name) return;
+  snap.forEach((d) => {
+    if (!isAdmin && d.id === name) return; // players don't see their own card duplicated
 
     const wrapper = document.createElement("div");
     wrapper.className = "player";
 
-    const title = document.createElement("h3");
-    title.textContent = d.id;
-    wrapper.appendChild(title);
+    const h3 = document.createElement("h3");
+    h3.textContent = d.id;
+    wrapper.appendChild(h3);
 
-    // Admin delete button
-    if(isAdmin){
+    // Admin delete
+    if (isAdmin) {
       const btn = document.createElement("button");
-      btn.className="adminBtn";
-      btn.textContent="Delete Card";
-      btn.onclick=async()=>{
-        if(confirm("Delete card?")){
-          const data=d.data();
-          for(const k in data){
-            await deleteObject(ref(storage,`cards/${d.id}/${k}.jpg`)).catch(()=>{});
-          }
-          await deleteDoc(doc(db,"cards",d.id));
+      btn.className = "adminBtn";
+      btn.textContent = "Delete Card";
+      btn.onclick = async () => {
+        if (!confirm("Delete card?")) return;
+
+        const data = d.data();
+        for (const k in data) {
+          await deleteObject(ref(storage, `cards/${d.id}/${k}.jpg`)).catch(() => {});
         }
+        await deleteDoc(doc(db, "cards", d.id));
       };
       wrapper.appendChild(btn);
     }
 
-    // Create read-only grid
+    // read-only grid view
     const gridView = document.createElement("div");
-    gridView.style.display="grid";
-    gridView.style.gridTemplateColumns="repeat(5,1fr)";
-    gridView.style.gap="6px";
-    gridView.style.marginTop="6px";
+    gridView.style.display = "grid";
+    gridView.style.gridTemplateColumns = "repeat(5,1fr)";
+    gridView.style.gap = "6px";
+    gridView.style.marginTop = "6px";
 
     const data = d.data();
 
-    labels.forEach((label,i)=>{
+    labels.forEach((label, i) => {
       const cell = document.createElement("div");
-      cell.className="cell";
+      cell.className = "cell";
 
-      if(data[i]){
+      if (data[i]) {
         cell.classList.add("filled");
-        cell.innerHTML = `
-          <img src="${data[i]}" crossorigin="anonymous">
-          <div class="label">${label}</div>
-        `;
+        cell.innerHTML = `<img src="${data[i]}" crossorigin="anonymous"><div class="label">${label}</div>`;
       } else {
         cell.classList.add("empty");
         cell.innerHTML = `<div class="label">${label}</div>`;
       }
-
       gridView.appendChild(cell);
     });
 
