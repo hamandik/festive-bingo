@@ -156,6 +156,7 @@ async function upload(i) {
   input.click();
 }
 
+async function main() {
 let smallBingoCelebrated = false;
 let fullBingoCelebrated = false;
 
@@ -324,3 +325,5 @@ onSnapshot(collection(db, "cards"), (snap) => {
     playersDiv.appendChild(wrapper);
   });
 });
+}
+main();
