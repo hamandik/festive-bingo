@@ -85,7 +85,6 @@ const grid = document.getElementById("myGrid");
 const playersDiv = document.getElementById("players");
 const banner = document.getElementById("banner");
 const titleEl = document.getElementById("myTitle");
-const downloadBtn = document.getElementById("downloadBtn");
 const firstBingoBanner = document.getElementById("firstBingoBanner");
 
 /** ===== First-to-BINGO banner (visible to all) ===== */
@@ -96,39 +95,6 @@ if (firstBingoBanner) {
       firstBingoBanner.textContent = `🏆 First to BINGO: ${snap.data().name}`;
     }
   });
-}
-
-/** ===== Download (quality + ensure photos included) ===== */
-if (isAdmin) {
-  if (downloadBtn) downloadBtn.style.display = "none";
-} else if (downloadBtn) {
-  downloadBtn.onclick = async () => {
-    // hide upload hints
-    document.querySelectorAll(".upload").forEach(el => (el.style.display = "none"));
-
-    // wait for all images in the grid to load
-    const imgs = grid.querySelectorAll("img");
-    await Promise.all(
-      [...imgs].map(img => {
-        if (img.complete) return Promise.resolve();
-        return new Promise(res => { img.onload = img.onerror = res; });
-      })
-    );
-
-    const canvas = await html2canvas(grid, {
-      useCORS: true,
-      backgroundColor: "#ffffff",
-      scale: 2
-    });
-
-    // restore upload hints
-    document.querySelectorAll(".upload").forEach(el => (el.style.display = ""));
-
-    const link = document.createElement("a");
-    link.download = `${name}-festive-bingo.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  };
 }
 
 /** ===== Title + hide personal card for admin ===== */
