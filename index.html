@@ -95,6 +95,8 @@ h1 { text-align:center; color:#d32f2f; margin-top:10px; }
 
 <h1>🎄 Festive Bingo 🎄</h1>
 <div id="myTitle">My Bingo Card</div>
+<div id="firstBingoBanner" style="display:none;text-align:center;margin:12px 0;font-size:18px;font-weight:bold;color:#b8860b;"></div>
+
 <div style="text-align:center; margin-bottom:10px;">
   <button id="downloadBtn" style="padding:8px 12px; font-size:14px; cursor:pointer;">
     📥 Download my card
@@ -106,14 +108,28 @@ h1 { text-align:center; color:#d32f2f; margin-top:10px; }
 <h2 style="margin-top:30px;">All Players</h2>
 <div id="players"></div>
 
-<h2 style="text-align:center;">All Players</h2>
-<div id="allPlayers"></div>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+<div id="bingoOverlay" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+  color:white;
+  font-size:64px;
+  font-weight:900;
+  letter-spacing:6px;
+  text-shadow:0 4px 12px rgba(0,0,0,0.8);
+">
+  🎉 BINGO!! 🎉
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script type="module" src="app.js"></script>
 
-<script type="module" src="app.js"></script>
 
 </body>
 </html>
