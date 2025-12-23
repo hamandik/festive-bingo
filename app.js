@@ -26,7 +26,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyBelqwWBNr1w5ZHs9YUOvZ4eH1INdqpmiY",
   authDomain: "festive-bingo.firebaseapp.com",
   projectId: "festive-bingo",
-  storageBucket: "festive-bingo.firebasestorage.app",
+  storageBucket: "festive-bingo.appspot.com",
   messagingSenderId: "1008823865996",
   appId: "1:1008823865996:web:1b754bc64b7c19d9ee21a9"
 };
