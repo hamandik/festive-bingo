@@ -33,7 +33,8 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const storage = getStorage(app);
+const storage = getStorage(app, "gs://festive-bingo.appspot.com");
+
 
 /** ===== Admin (device-only) ===== */
 const ADMIN_PASSWORD = "k99h"; // change if you want
