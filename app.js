@@ -153,7 +153,7 @@ if (!isAdmin) {
 
       if (data[i]) {
         c.className = "cell filled";
-        c.innerHTML = `<img src="${data[i]}" crossorigin="anonymous"><div class="label">${labels[i]}</div>`;
+        c.innerHTML = `<img src="${data[i]}"><div class="label">${labels[i]}</div>`;
       } else {
         c.className = "cell empty";
         c.innerHTML = `<div class="label">${labels[i]}<span class="upload">Tap to upload</span></div>`;
@@ -280,7 +280,7 @@ onSnapshot(collection(db, "cards"), (snap) => {
 
       if (data[i]) {
         cell.classList.add("filled");
-        cell.innerHTML = `<img src="${data[i]}" crossorigin="anonymous"><div class="label">${label}</div>`;
+        cell.innerHTML = `<img src="${data[i]}"><div class="label">${label}</div>`;
       } else {
         cell.classList.add("empty");
         cell.innerHTML = `<div class="label">${label}</div>`;
