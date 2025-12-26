@@ -117,7 +117,10 @@ async function upload(i) {
 
     const r = ref(storage, `cards/${name}/${i}.jpg`);
     await uploadBytes(r, file);
+      contentType: "image/jpeg"
+
     const url = await getDownloadURL(r);
+
     await updateDoc(doc(db, "cards", name), { [i]: url });
   };
   input.click();
