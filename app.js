@@ -110,21 +110,46 @@ if (isAdmin) {
 async function upload(i) {
   const input = document.createElement("input");
   input.type = "file";
-  input.accept = "image/*"; // allows camera or gallery on most phones
+  input.accept = "image/*";
+
+  // 🔑 MUST be attached for iOS
+  input.style.display = "none";
+  document.body.appendChild(input);
+
   input.onchange = async () => {
-    const file = input.files?.[0];
-    if (!file) return;
+    console.log("📸 File chooser triggered");
 
-    const r = ref(storage, `cards/${name}/${i}.jpg`);
-    await uploadBytes(r, file);
-      contentType: "image/jpeg"
+    const file = input.files && input.files[0];
+    if (!file) {
+      console.log("❌ No file selected");
+      document.body.removeChild(input);
+      return;
+    }
 
-    const url = await getDownloadURL(r);
+    console.log("✅ File selected:", file.name, file.type);
 
-    await updateDoc(doc(db, "cards", name), { [i]: url });
+    try {
+      const r = ref(storage, `cards/${name}/${i}.jpg`);
+
+      await uploadBytes(r, file, {
+        contentType: "image/jpeg"
+      });
+
+      const url = await getDownloadURL(r);
+      await updateDoc(doc(db, "cards", name), { [i]: url });
+
+      console.log("✅ Upload complete");
+    } catch (err) {
+      console.error("🔥 Upload failed", err);
+      alert("Upload failed. Please try again.");
+    }
+
+    document.body.removeChild(input);
   };
+
   input.click();
 }
+
 
 async function main() {
 let smallBingoCelebrated = false;
